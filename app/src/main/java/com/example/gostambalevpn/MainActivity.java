@@ -181,6 +181,8 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
                     showMessage(msg, Color.WHITE);
                     emoji_txt.setText("\uD83E\uDDD0");
                     GostambaleVpnService.stopVPN(this, false);
+                    btn_disconnect.setVisibility(View.GONE);
+                    btn_connect.setVisibility(View.VISIBLE);
                     break;
                 case VpnStatus.VPN_LOGIN:
                     if (msg == null)
