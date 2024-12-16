@@ -36,9 +36,9 @@ public class GostambaleVpnService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        VpnStatus.updateStatusChange(this, VpnStatus.VPN_CONNECTING, null);
         if(intent.getAction() == null)return START_NOT_STICKY;
         if(intent.getAction().equalsIgnoreCase("START")){
+            VpnStatus.updateStatusChange(this, VpnStatus.VPN_CONNECTING, null);
             if(vpnRunning != null){
                 vpnRunning.interrupt();
             }
