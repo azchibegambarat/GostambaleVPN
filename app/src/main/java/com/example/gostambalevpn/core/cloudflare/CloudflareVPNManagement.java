@@ -44,7 +44,6 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     private Thread updateUIThread;
     private Thread sndThread;
 
-
     public CloudflareVPNManagement(GostambaleVpnService gostambaleVpnService) {
         this.vpnService = gostambaleVpnService;
         mConfigureIntent = PendingIntent.getActivity(vpnService, 0, new Intent(vpnService, MainActivity.class),
