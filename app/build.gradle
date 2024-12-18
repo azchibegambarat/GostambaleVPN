@@ -5,7 +5,7 @@ plugins {
 android {
     namespace 'com.example.gostambalevpn'
     compileSdk 34
-
+    buildFeatures.aidl = true
     defaultConfig {
         applicationId "com.example.gostambalevpn"
         minSdk 24

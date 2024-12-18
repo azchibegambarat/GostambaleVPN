@@ -3,18 +3,37 @@ package com.example.gostambalevpn.core;
 import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
+import android.os.IBinder;
+import android.os.RemoteException;
 
+import com.example.gostambalevpn.IGostambaleVPNService;
 import com.example.gostambalevpn.core.cloudflare.CloudflareVPNManagement;
 import com.example.gostambalevpn.utils.VpnStatus;
 
-import java.util.Date;
-
-public class GostambaleVpnService extends VpnService {
+public class GostambaleVpnService extends VpnService implements IGostambaleVPNService {
+    public static final String START_SERVICE = "com.example.gostambalevpn.core.START_SERVICE";
     private VPNManagement management = null;
     private Thread mainThread = null;
     private Thread vpnRunning = null;
     private static boolean running = false;
     private static boolean msg;
+    private final IBinder mBinder = new IGostambaleVPNService.Stub(){
+
+        @Override
+        public boolean protect(int fd) throws RemoteException {
+            return GostambaleVpnService.this.protect(fd);
+        }
+
+        @Override
+        public void userPause(boolean b) throws RemoteException {
+            GostambaleVpnService.this.userPause(b);
+        }
+
+        @Override
+        public boolean stopVPN(boolean replaceConnection) throws RemoteException {
+            return GostambaleVpnService.this.stopVPN(replaceConnection);
+        }
+    };
 
     public static boolean isRunning() {
         return running;
@@ -26,12 +45,18 @@ public class GostambaleVpnService extends VpnService {
         running = true;
 
     }
-    public static void stopVPN(Context context, boolean msdg){
+    public static void stopVPNKON(boolean msdg){
         msg = msdg;
-        Intent intent = new Intent(context, GostambaleVpnService.class);
-        intent.setAction("STOP");
-        context.startService(intent);
         running = false;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        String action = intent.getAction();
+        if (action != null && action.equals(START_SERVICE))
+            return mBinder;
+        else
+            return super.onBind(intent);
     }
 
     @Override
@@ -70,20 +95,36 @@ public class GostambaleVpnService extends VpnService {
             });
             vpnRunning.start();
             return START_STICKY;
-        }else if(intent.getAction().equalsIgnoreCase("STOP")){
-            if(msg)VpnStatus.updateStatusChange(this, VpnStatus.VPN_DISCONNECTED, null);
-            running = false;
-            if(vpnRunning != null){
-                vpnRunning.interrupt();
-            }
-            if(management != null){
-                management.vpnStop();
-                mainThread.interrupt();
-            }
-            stopSelf();
-
         }
         return START_NOT_STICKY;
     }
 
+    @Override
+    public void userPause(boolean b) throws RemoteException {
+
+    }
+
+    @Override
+    public boolean stopVPN(boolean replaceConnection) throws RemoteException {
+        if(msg)VpnStatus.updateStatusChange(this, VpnStatus.VPN_DISCONNECTED, null);
+        running = false;
+        if(vpnRunning != null){
+            vpnRunning.interrupt();
+        }
+        if(management != null){
+            management.vpnStop();
+            mainThread.interrupt();
+        }
+        if (getManagement() != null)
+            return getManagement().vpnStop();
+        else
+            return false;
+    }
+    public VPNManagement getManagement() {
+        return management;
+    }
+    @Override
+    public IBinder asBinder() {
+        return mBinder;
+    }
 }

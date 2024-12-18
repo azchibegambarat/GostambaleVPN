@@ -1,20 +1,22 @@
 package com.example.gostambalevpn;
 
-import static androidx.core.app.ActivityCompat.startActivityForResult;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.VpnService;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
+import android.os.RemoteException;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.ColorInt;
@@ -47,10 +49,32 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
     private TextView usage_txt;
     private ProgressBar progressBar;
 
+    private IGostambaleVPNService mService;
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = IGostambaleVPNService.Stub.asInterface(service);
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mService = null;
+        }
+    };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unbindService(mConnection);
+    }
 
     @Override
     protected void onResume() {
         VpnStatus.updateStatusChange(this, VpnStatus.getLastStatus(this), null);
+        Intent intent = new Intent(this, GostambaleVpnService.class);
+        intent.setAction(GostambaleVpnService.START_SERVICE);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         super.onResume();
     }
 
@@ -95,7 +119,8 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             GostambaleVpnService.startVPN(this);
         });
         btn_disconnect.setOnClickListener(v -> {
-            GostambaleVpnService.stopVPN(this, true);
+            //GostambaleVpnService.stopVPNKON(this, true);
+            stop_vpn(true);
         });
 
         uiThread = new Thread(() -> {
@@ -115,6 +140,17 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             }
         });
         uiThread.start();
+    }
+
+    private void stop_vpn(boolean msg) {
+        GostambaleVpnService.stopVPNKON(msg);
+        if(mService != null){
+            try {
+                mService.stopVPN(true);
+            } catch (RemoteException e) {
+
+            }
+        }
     }
 
     @Override
@@ -180,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
                         msg = "ایران قطع کرد VPN رو!!!";
                     showMessage(msg, Color.WHITE);
                     emoji_txt.setText("\uD83E\uDDD0");
-                    GostambaleVpnService.stopVPN(this, false);
+                    stop_vpn(false);
                     btn_disconnect.setVisibility(View.GONE);
                     btn_connect.setVisibility(View.VISIBLE);
                     break;

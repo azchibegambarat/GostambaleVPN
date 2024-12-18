@@ -51,7 +51,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     }
 
     @Override
-    public void vpnStop() {
+    public boolean vpnStop() {
         running = false;
         if (this.websocket != null) {
             this.websocket.close();
@@ -66,6 +66,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
         } catch (IOException e) {
 
         }
+        return true;
     }
 
     @Override

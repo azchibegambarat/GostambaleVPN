@@ -1,7 +1,7 @@
 package com.example.gostambalevpn.core;
 
 public interface VPNManagement extends Runnable{
-    void vpnStop();
+    boolean vpnStop();
     void vpnReconnect();
     boolean running();
 }
