@@ -64,7 +64,6 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         else
             return super.onBind(intent);
     }
-
     @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
