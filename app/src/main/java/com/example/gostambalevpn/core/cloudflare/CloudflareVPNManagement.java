@@ -1,14 +1,10 @@
 package com.example.gostambalevpn.core.cloudflare;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.companion.WifiDeviceFilter;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
-import android.os.RemoteException;
 
 import com.example.gostambalevpn.MainActivity;
 import com.example.gostambalevpn.core.GostambaleVpnService;
@@ -27,7 +23,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCallback {
@@ -40,9 +35,10 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     private FileChannel in_vpn;
     private FileChannel out_vpn;
     private long total_rx,total_tx;
-    private boolean running;
+    private VPNConnectionState state = VPNConnectionState.Connecting;
     private Thread updateUIThread;
     private Thread sndThread;
+    private boolean running;
 
     public CloudflareVPNManagement(GostambaleVpnService gostambaleVpnService) {
         this.vpnService = gostambaleVpnService;
@@ -53,6 +49,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     @Override
     public boolean vpnStop() {
         running = false;
+        state = VPNConnectionState.Exit;
         if (this.websocket != null) {
             this.websocket.close();
         }
@@ -75,8 +72,8 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     }
 
     @Override
-    public boolean running() {
-        return running;
+    public VPNConnectionState running() {
+        return state;
     }
 
     @Override
@@ -133,11 +130,13 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     }
     private void connectCloudflare() {
         try{
+            state = VPNConnectionState.Connecting;
             VpnStatus.updateStatusChange(vpnService, VpnStatus.VPN_CONNECTING,"درحال اتصال به آسمان شعله‌ور");
             this.websocket = new WebSocketClient(new URI("wss://" + HOST + "/websocket")){
                 @Override
                 public void onOpen(ServerHandshake handshakedata, String x_ip) {
                     try {
+                        state = VPNConnectionState.Connected;
                         VpnStatus.updateStatusChange(vpnService, VpnStatus.VPN_CONNECTING," درحال ثبت آیپی " + x_ip);
                         configure(x_ip);
                         running = true;
@@ -202,7 +201,8 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    running = false;
+                    if(running)
+                        state = VPNConnectionState.RemoteClosed;
                 }
 
                 @Override

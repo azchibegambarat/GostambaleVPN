@@ -1,14 +1,20 @@
 package com.example.gostambalevpn.core;
 
+import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.example.gostambalevpn.IGostambaleVPNService;
 import com.example.gostambalevpn.core.cloudflare.CloudflareVPNManagement;
 import com.example.gostambalevpn.utils.VpnStatus;
+
+import java.util.Objects;
 
 public class GostambaleVpnService extends VpnService implements IGostambaleVPNService {
     public static final String START_SERVICE = "com.example.gostambalevpn.core.START_SERVICE";
@@ -59,6 +65,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
             return super.onBind(intent);
     }
 
+    @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent.getAction() == null)return START_NOT_STICKY;
@@ -79,12 +86,27 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                while (running){
                    try {
                        Thread.sleep(2000);
-                       running = management.running();
-                       if(!running){
-                           management.vpnStop();
-                           mainThread.interrupt();
-                           VpnStatus.updateStatusChange(this, VpnStatus.VPN_INTERRUPT, null);
+                       VPNManagement.VPNConnectionState state = management.running();
+                       if(state == VPNManagement.VPNConnectionState.Exit){
+                           running = false;
                            break;
+                       }
+                       if(state == VPNManagement.VPNConnectionState.RemoteClosed){
+                           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                               startForeground(120, HeadsUpNotificationService.onStartCommand(this));
+                           } else {
+                               startForeground(120, Objects.requireNonNull(HeadsUpNotificationService.onStartCommand(this)), FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                           }
+                           VpnStatus.updateStatusChange(this, VpnStatus.VPN_INTERRUPT, null);
+                           new Thread(()->{
+                               try {
+                                   Thread.sleep(2000);
+                               } catch (InterruptedException e) {
+
+                               }
+                               management.vpnStop();
+                               mainThread.interrupt();
+                           }).start();
                        }
                    } catch (InterruptedException e) {
                        running = false;

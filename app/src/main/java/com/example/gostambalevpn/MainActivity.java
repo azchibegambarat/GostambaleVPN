@@ -1,13 +1,18 @@
 package com.example.gostambalevpn;
 
+import static android.Manifest.permission.POST_NOTIFICATIONS;
+import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,15 +22,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.ColorInt;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.gostambalevpn.core.GostambaleVpnService;
+import com.example.gostambalevpn.core.HeadsUpNotificationService;
 import com.example.gostambalevpn.utils.App;
 import com.example.gostambalevpn.utils.MessageColor;
 import com.example.gostambalevpn.utils.VpnStatus;
@@ -33,6 +42,7 @@ import com.example.gostambalevpn.utils.VpnStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCallback, VpnStatus.VpnStatusChange {
@@ -88,6 +98,14 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{POST_NOTIFICATIONS}, 666);
+            } else {
+                Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+
+            }
+        }
         ll_message = findViewById(R.id.ll_message);
         ll_main = findViewById(R.id.ll_main);
         message_txt = findViewById(R.id.message_txt);
