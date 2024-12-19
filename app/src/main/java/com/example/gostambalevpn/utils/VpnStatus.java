@@ -2,6 +2,7 @@ package com.example.gostambalevpn.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.VpnService;
 
 import com.example.gostambalevpn.core.GostambaleVpnService;
 
@@ -25,8 +26,11 @@ public class  VpnStatus {
     public static final String VPN_INTERRUPT = "interrupt";
     private static String VPN_LAST_STATE = VPN_DISCONNECTED;
     private static List<VpnStatusChange> vpnStatusChangeList = new ArrayList<>();
-    public static void addVpnStatusChange(VpnStatusChange vpnStatusChange){
+    public synchronized  static void addVpnStatusChange(VpnStatusChange vpnStatusChange){
         vpnStatusChangeList.add(vpnStatusChange);
+    }
+    public synchronized  static void remove(VpnStatusChange vpnStatusChange) {
+        vpnStatusChangeList.remove(vpnStatusChange);
     }
     public static String getLastStatus(Context context){
         SharedPreferences sp_settings = context.getSharedPreferences("sp_settings", 0);
@@ -78,6 +82,8 @@ public class  VpnStatus {
         value *= Long.signum(bytes);
         return String.format("%.1f %ciB", value / 1024.0, ci.current());
     }
+
+
 
     public static interface VpnStatusChange{
         void statusChange(String cmd, String msg);

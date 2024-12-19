@@ -216,7 +216,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
             websocket.setTcpNoDelay(true);
             websocket.setConnectionLostTimeout(0);
 
-            boolean res = websocket.connectBlocking(30, TimeUnit.SECONDS);
+            boolean res = websocket.connectBlocking(5, TimeUnit.SECONDS);
             if(res){
                 vpnService.protect(websocket.getSocket());
             }

@@ -3,7 +3,10 @@ package com.example.gostambalevpn;
 import static android.Manifest.permission.POST_NOTIFICATIONS;
 import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,6 +17,7 @@ import android.graphics.Color;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -58,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
     private TextView emoji_txt;
     private TextView usage_txt;
     private ProgressBar progressBar;
-
+    private CountDownTimer ConnectionTimer;
     private IGostambaleVPNService mService;
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
@@ -72,6 +76,12 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             mService = null;
         }
     };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        VpnStatus.remove(this);
+    }
 
     @Override
     protected void onPause() {
@@ -98,11 +108,12 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         if (Build.VERSION.SDK_INT >= 33) {
             if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{POST_NOTIFICATIONS}, 666);
             } else {
-                Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "مجوز قبلا داده شده است", Toast.LENGTH_SHORT).show();
 
             }
         }
@@ -127,17 +138,30 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         } else {
             onActivityResult(App.START_VPN_PROFILE, Activity.RESULT_OK, null);
         }
-
+        createNotificationChannels();
         VpnStatus.addVpnStatusChange(this);
         App.appInit(this);
         App.startAnimation(this, findViewById(R.id.GUID), R.anim.anim_slide_down, true);
         App.login(App.LOGIN_CODE, this);
 
         btn_connect.setOnClickListener(v -> {
+            if(ConnectionTimer != null)ConnectionTimer.cancel();
+            ConnectionTimer = new CountDownTimer(7_000, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    if(GostambaleVpnService.isRunning())ConnectionTimer.cancel();
+                }
+
+                @Override
+                public void onFinish() {
+                    stop_vpn(true);
+                }
+            };
             GostambaleVpnService.startVPN(this);
         });
         btn_disconnect.setOnClickListener(v -> {
             //GostambaleVpnService.stopVPNKON(this, true);
+            if(ConnectionTimer != null)ConnectionTimer.cancel();
             stop_vpn(true);
         });
 
@@ -269,7 +293,23 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             }
         });
     }
+    @TargetApi(Build.VERSION_CODES.O)
+    private void createNotificationChannels() {
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+        // Background message
+        CharSequence name = "آمار اتصال";
+        NotificationChannel mChannel = new NotificationChannel(GostambaleVpnService.NOTIFICATION_CHANNEL_BG_ID,
+                name, NotificationManager.IMPORTANCE_MIN);
+
+        mChannel.setDescription("آمار در حال انجام اتصال GostambaleVPN ایجاد شده");
+        mChannel.enableLights(false);
+
+        mChannel.setLightColor(Color.DKGRAY);
+        mNotificationManager.createNotificationChannel(mChannel);
+
+    }
     @Override
     public void updateBytes(long capacity, long rx, long tx) {
         handler.post(()->{
