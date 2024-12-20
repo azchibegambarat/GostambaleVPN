@@ -1,7 +1,10 @@
 package com.example.gostambalevpn;
 
+import static com.example.gostambalevpn.core.GostambaleVpnService.NOTIFICATION_CHANNEL_BG_ID;
+
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -72,7 +75,9 @@ public class DisconnectVPN extends Activity implements DialogInterface.OnClickLi
                 try {
                     GostambaleVpnService.stopVPNKON(true);
                     mService.stopVPN(false);
-                    NotificationManagerCompat.from(this).cancelAll();
+                    NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
+                    nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
+                    nMgr.cancelAll();
                 } catch (RemoteException e) {
 
                 }

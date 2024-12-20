@@ -158,7 +158,9 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
                 }
             };
             GostambaleVpnService.startVPN(this);
+            ConnectionTimer.start();
         });
+
         btn_disconnect.setOnClickListener(v -> {
             //GostambaleVpnService.stopVPNKON(this, true);
             if(ConnectionTimer != null)ConnectionTimer.cancel();

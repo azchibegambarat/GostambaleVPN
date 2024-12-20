@@ -40,6 +40,8 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     private static boolean msg;
     private long mConnecttime;
     private String lastChannel;
+    private long old_rx, old_tx;
+
     private final IBinder mBinder = new IGostambaleVPNService.Stub(){
 
         @Override
@@ -85,6 +87,8 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         mConnecttime = 0;
+        old_rx = 0;
+        old_tx  = 0;
         stopForeground(true);
         if(intent.getAction() == null)return START_NOT_STICKY;
         if(intent.getAction().equalsIgnoreCase("START")){
@@ -167,6 +171,10 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopForeground(true);
+        NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
+        nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
+        nMgr.cancelAll();
         VpnStatus.remove(this);
     }
 
@@ -225,7 +233,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         priority = PRIORITY_MIN;
 
 
-        nbuilder.setContentTitle("GostambaleVPN");
+        nbuilder.setContentTitle(tickerText);
 
         nbuilder.setContentText(msg);
         nbuilder.setOnlyAlertOnce(true);
@@ -307,8 +315,23 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
 
     @Override
     public void updateBytes(long capacity, long rx, long tx) {
+        long dif_tx = 0;
+        long dif_rx = 0;
+
+        if(old_tx != 0){
+            dif_tx = tx - old_tx;
+        }
+
+        if(old_rx != 0){
+            dif_rx = rx - old_rx;
+        }
+
+        old_tx = tx;
+        old_rx = rx;
+
         long percent = ((rx + tx) * 100L) / capacity;
-        String msg = (String.format("%s / %s (%s)" , VpnStatus.humanReadableByteCountBin(rx + tx), VpnStatus.humanReadableByteCountBin(capacity), percent + "%"));
-        showNotification(msg, null, NOTIFICATION_CHANNEL_BG_ID, mConnecttime, null);
+        String tickerText = (String.format("%s/%s(%s) " , VpnStatus.humanReadableByteCountBin(rx + tx), VpnStatus.humanReadableByteCountBin(capacity), percent + "%"));
+        String in_out = String.format("%s %s", VpnStatus.humanReadableByteCountBin(dif_rx), VpnStatus.humanReadableByteCountBin(dif_tx));
+        showNotification(in_out, tickerText, NOTIFICATION_CHANNEL_BG_ID, mConnecttime, null);
     }
 }

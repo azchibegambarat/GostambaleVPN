@@ -30,7 +30,8 @@ public class  VpnStatus {
         vpnStatusChangeList.add(vpnStatusChange);
     }
     public synchronized  static void remove(VpnStatusChange vpnStatusChange) {
-        vpnStatusChangeList.remove(vpnStatusChange);
+        if(!vpnStatusChangeList.isEmpty())
+            vpnStatusChangeList.remove(vpnStatusChange);
     }
     public static String getLastStatus(Context context){
         SharedPreferences sp_settings = context.getSharedPreferences("sp_settings", 0);
