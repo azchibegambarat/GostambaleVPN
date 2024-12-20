@@ -55,6 +55,11 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         }
 
         @Override
+        public void removeNotification() throws RemoteException {
+            GostambaleVpnService.this.removeNotification();
+        }
+
+        @Override
         public boolean stopVPN(boolean replaceConnection) throws RemoteException {
             return GostambaleVpnService.this.stopVPN(replaceConnection);
         }
@@ -64,10 +69,11 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         return running;
     }
     public static void startVPN(Context context){
+
         Intent intent = new Intent(context, GostambaleVpnService.class);
         intent.setAction("START");
         context.startService(intent);
-        running = true;
+        running = false;
 
     }
     public static void stopVPNKON(boolean msdg){
@@ -89,7 +95,11 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         mConnecttime = 0;
         old_rx = 0;
         old_tx  = 0;
-        stopForeground(true);
+        try {
+            removeNotification();
+        } catch (RemoteException e) {
+
+        }
         if(intent.getAction() == null)return START_NOT_STICKY;
         if(intent.getAction().equalsIgnoreCase("START")){
             VpnStatus.updateStatusChange(this, VpnStatus.VPN_CONNECTING, null);
@@ -105,12 +115,13 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
             mainThread.start();
 
             vpnRunning = new Thread(()->{
-               while (running){
+               while (!Thread.interrupted()){
                    try {
                        Thread.sleep(1000);
                        VPNManagement.VPNConnectionState state = management.running();
                        if(state == VPNManagement.VPNConnectionState.Connected){
                            if(mConnecttime == 0)mConnecttime = System.currentTimeMillis();
+                           running = true;
                            continue;
                        }
                        if(state == VPNManagement.VPNConnectionState.Exit){
@@ -118,6 +129,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                            break;
                        }
                        if(state == VPNManagement.VPNConnectionState.RemoteClosed){
+                           running = false;
                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                                startForeground(120, HeadsUpNotificationService.onStartCommand(this));
                            } else {
@@ -153,6 +165,15 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
 
     }
 
+    @Override
+    public void removeNotification() throws RemoteException {
+        NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
+        nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
+        nMgr.cancel(120);
+        nMgr.cancelAll();
+        stopForeground(true);
+    }
+
     PendingIntent getGraphPendingIntent() {
         // Let the configure Button show the Log
 
@@ -171,10 +192,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopForeground(true);
-        NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
-        nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
-        nMgr.cancelAll();
+
         VpnStatus.remove(this);
     }
 

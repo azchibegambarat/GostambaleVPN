@@ -45,6 +45,13 @@
             android:noHistory="true"
             android:taskAffinity=".DisconnectVPN"
              />
+        <activity
+            android:name=".ReconnectVPN"
+            android:autoRemoveFromRecents="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=".ReconnectVPN"
+             />
         <service
             android:name=".core.GostambaleVpnService"
             android:exported="true"
@@ -54,7 +61,6 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
-        <receiver android:name=".core.HeadsUpNotificationActionReceiver"  />
     </application>
 
 </manifest>

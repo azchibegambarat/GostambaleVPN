@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         App.startAnimation(this, findViewById(R.id.GUID), R.anim.anim_slide_down, true);
         App.login(App.LOGIN_CODE, this);
 
-        btn_connect.setOnClickListener(v -> {
+        btn_connect.setOnClickListener(v ->  {
             if(ConnectionTimer != null)ConnectionTimer.cancel();
             ConnectionTimer = new CountDownTimer(7_000, 1000) {
                 @Override

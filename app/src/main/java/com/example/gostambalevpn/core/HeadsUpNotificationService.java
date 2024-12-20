@@ -11,7 +11,9 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 
 
+import com.example.gostambalevpn.DisconnectVPN;
 import com.example.gostambalevpn.R;
+import com.example.gostambalevpn.ReconnectVPN;
 
 import java.util.Objects;
 
@@ -26,21 +28,19 @@ public class HeadsUpNotificationService {
 //            data = intent.getBundleExtra(ConstantApp.FCM_DATA_KEY);
 //        }
         try {
-            Intent receiveCallAction = new Intent(context, HeadsUpNotificationActionReceiver.class);
-            receiveCallAction.putExtra("CALL_RESPONSE_ACTION_KEY", "CALL_RECEIVE_ACTION");
-            //receiveCallAc‍tion.putExtra(ConstantApp.FCM_DATA_KEY, data);
-            receiveCallAction.setAction("RECEIVE_CALL");
+            Intent disconnectVPN = new Intent(context, DisconnectVPN.class);
+            disconnectVPN.setAction("DISCONNECT_VPN");
+            PendingIntent disconnectPendingIntent = PendingIntent.getActivity(context, 0, disconnectVPN, PendingIntent.FLAG_IMMUTABLE);
 
-            Intent cancelCallAction = new Intent(context, HeadsUpNotificationActionReceiver.class);
-            cancelCallAction.putExtra("CALL_RESPONSE_ACTION_KEY", "CALL_CANCEL_ACTION");
-            //cancelCallAction.putExtra(ConstantApp.FCM_DATA_KEY, data);
-            cancelCallAction.setAction("CANCEL_CALL");
+            Intent reconnectVPN = new Intent(context, ReconnectVPN.class);
+            reconnectVPN.setAction("RECONNECT_VPN");
+            PendingIntent reconnectPendingIntent = PendingIntent.getActivity(context, 0, reconnectVPN, PendingIntent.FLAG_IMMUTABLE);
 
-            PendingIntent receiveCallPendingIntent = PendingIntent.getBroadcast(context, 1200, receiveCallAction, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            PendingIntent cancelCallPendingIntent = PendingIntent.getBroadcast(context, 1201, cancelCallAction, PendingIntent.FLAG_UPDATE_CURRENT| PendingIntent.FLAG_IMMUTABLE);
+
 
             createChannel(context);
             NotificationCompat.Builder notificationBuilder = null;
+
             //if (data != null) {
                 notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
                         .setContentTitle("VPN قطع شد")
@@ -51,9 +51,11 @@ public class HeadsUpNotificationService {
                         .setCategory(NotificationCompat.CATEGORY_CALL)
 //                        .addAction(R.drawable.ic_stat_vpn_offline, "Receive Call", receiveCallPendingIntent)
 //                        .addAction(R.drawable.ic_stat_vpn_outline, "Cancel call", cancelCallPendingIntent)
-                        .setAutoCancel(true)
+                        .setAutoCancel(false)
+                        .setOngoing(true)
 //                        .setSound(Uri.parse("android.resource://" + getContext().getPackageName() + "/" + R.raw.voip_ringtone))
-                        .setFullScreenIntent(receiveCallPendingIntent, true);
+                        .addAction(R.drawable.ic_stat_vpn_outline, "اتصال دوباره", reconnectPendingIntent)
+                        .addAction(R.drawable.ic_stat_vpn_offline, "قطع کن بره", disconnectPendingIntent);
             //}
 
             Notification incomingCallNotification = null;
