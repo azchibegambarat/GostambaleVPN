@@ -12,6 +12,10 @@ import org.json.JSONObject;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -20,12 +24,14 @@ public class  VpnStatus {
     public static final String VPN_DISCONNECTED = "disconnected";
     public static final String VPN_CONNECTING = "connecting";
     public static final String VPN_ERROR = "error";
+    public static final String CH_OK = "ch_ok";
+    public static final String CH_NOT = "ch_not";
     public static final String VPN_EXPIRE = "expire";
     public static final String VPN_NOTCONNECTED = "notconnected";
     public static final String VPN_LOGIN = "login";
     public static final String VPN_INTERRUPT = "interrupt";
     private static String VPN_LAST_STATE = VPN_DISCONNECTED;
-    private static List<VpnStatusChange> vpnStatusChangeList = new ArrayList<>();
+    private static final List<VpnStatusChange> vpnStatusChangeList = Collections.synchronizedList(new ArrayList<>());;
     public synchronized  static void addVpnStatusChange(VpnStatusChange vpnStatusChange){
         vpnStatusChangeList.add(vpnStatusChange);
     }

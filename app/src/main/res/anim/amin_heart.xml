@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <scale
+        android:duration="10000"
+        android:fromXScale="1"
+        android:fromYScale="1"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        android:toXScale="0.75"
+        android:toYScale="0.75"
+        android:interpolator="@android:interpolator/bounce" />
+    <scale
+        android:duration="5000"
+        android:fromXScale="1"
+        android:fromYScale="1"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        android:toXScale="0.8"
+        android:toYScale="1.2"
+        android:interpolator="@android:interpolator/bounce" />
+
+    <rotate
+        android:duration="5000"
+        android:fromDegrees="-50"
+        android:pivotX="150%"
+        android:pivotY="0%"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        android:toDegrees="50"
+        android:interpolator="@android:interpolator/bounce"
+        />
+
+    <rotate
+        android:duration="5000"
+        android:fromDegrees="50"
+        android:pivotX="100%"
+        android:pivotY="150%"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        android:toDegrees="0"
+        android:interpolator="@android:interpolator/bounce"
+        />
+    <translate
+        android:duration="4000"
+        android:fromXDelta="0"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse"
+        android:toXDelta="-100%p" />
+</set>

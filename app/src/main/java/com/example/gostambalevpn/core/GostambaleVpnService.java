@@ -28,7 +28,9 @@ import com.example.gostambalevpn.utils.VpnStatus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.Objects;
+import java.util.Random;
 
 public class GostambaleVpnService extends VpnService implements IGostambaleVPNService, VpnStatus.VpnStatusChange {
     public static final String START_SERVICE = "com.example.gostambalevpn.core.START_SERVICE";
@@ -131,15 +133,16 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                        if(state == VPNManagement.VPNConnectionState.RemoteClosed){
                            running = false;
                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                               startForeground(120, HeadsUpNotificationService.onStartCommand(this));
+                               startForeground((int) new Date().getTime(), HeadsUpNotificationService.onStartCommand(this));
                            } else {
-                               startForeground(120, Objects.requireNonNull(HeadsUpNotificationService.onStartCommand(this)), FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                               startForeground((int) new Date().getTime(), Objects.requireNonNull(HeadsUpNotificationService.onStartCommand(this)), FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                            }
                            VpnStatus.updateStatusChange(this, VpnStatus.VPN_INTERRUPT, null);
                            new Thread(()->{
                                try {
                                    Thread.sleep(2000);
-                               } catch (InterruptedException e) {
+                                   removeNotification();
+                               } catch (InterruptedException | RemoteException e) {
 
                                }
                                management.vpnStop();
@@ -169,7 +172,6 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     public void removeNotification() throws RemoteException {
         NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
         nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
-        nMgr.cancel(120);
         nMgr.cancelAll();
         stopForeground(true);
     }
