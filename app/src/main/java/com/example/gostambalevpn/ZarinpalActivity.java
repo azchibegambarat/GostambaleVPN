@@ -12,6 +12,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -48,6 +50,7 @@ public class ZarinpalActivity extends AppCompatActivity {
     private String __amount;
     private String __capacity;
     private TextView loading;
+    private ScrollView pooll;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,16 +64,44 @@ public class ZarinpalActivity extends AppCompatActivity {
         });
         this.webView = findViewById(R.id.webview);
         this.loading = findViewById(R.id.loading);
+        this.pooll = findViewById(R.id.pool);
+
+        Button r2gig = findViewById(R.id.r2gig);
+        Button r5gig = findViewById(R.id.r5gig);
+        Button r7gig = findViewById(R.id.r7gig);
+        Button r10gig = findViewById(R.id.r10gig);
+        Button r15gig = findViewById(R.id.r15gig);
+        Button r20gig = findViewById(R.id.r20gig);
+        Button r30gig = findViewById(R.id.r30gig);
+        Button r40gig = findViewById(R.id.r40gig);
+        Button r50gig = findViewById(R.id.r50gig);
+        Button r60gig = findViewById(R.id.r60gig);
+        Button r120gig = findViewById(R.id.r120gig);
+
+        r2gig.setOnClickListener(v -> {charge_kon(14, 2);});
+        r5gig.setOnClickListener(v -> {charge_kon(35, 5);});
+        r7gig.setOnClickListener(v -> {charge_kon(45, 7);});
+        r10gig.setOnClickListener(v -> {charge_kon(60, 10);});
+        r15gig.setOnClickListener(v -> {charge_kon(87, 15);});
+        r20gig.setOnClickListener(v -> {charge_kon(112, 20);});
+        r30gig.setOnClickListener(v -> {charge_kon(150, 30);});
+        r40gig.setOnClickListener(v -> {charge_kon(180, 40);});
+        r50gig.setOnClickListener(v -> {charge_kon(210, 50);});
+        r60gig.setOnClickListener(v -> {charge_kon(228, 60);});
+        r120gig.setOnClickListener(v -> {charge_kon(250, 120);});
         initWeb();
 
         //test
-        long ok = 1024L * 1024L * 1024L * 10L;
-        charge_kon("102334", "" + ok);
+//        long ok = 1024L * 1024L * 1024L * 10L;
+//        charge_kon("102334", "" + ok);
     }
-    private void charge_kon(String amount, String capacity) {
+    private void charge_kon(long amount, long capacity) {
+        amount = amount * 10000L;
+        capacity = capacity * 1024L * 1024L * 1024L;
+        App.startAnimation(this, pooll, R.anim.anim_slide_out_left, false);
         loading.setVisibility(View.VISIBLE);
-        __capacity = capacity;
-        __amount = amount;
+        __capacity = capacity + "";
+        __amount = amount + "";
         new Thread(() -> {
             try {
                 URL url = new URL("https://payment.zarinpal.com/pg/v4/payment/request.json");
@@ -79,7 +110,7 @@ public class ZarinpalActivity extends AppCompatActivity {
                 http.setRequestMethod("POST"); // PUT is another valid option
                 http.setDoOutput(true);
                 http.setDoInput(true);
-                String json = new ObjectMapper().writeValueAsString(new ZarinpalPost("1471553a-bc89-4a62-8e52-b7b4bdd208b8", Integer.parseInt(amount), "https://www.zarinpal.com/", capacity + "," + App.getUniquePseudoID(this)));
+                String json = new ObjectMapper().writeValueAsString(new ZarinpalPost("1471553a-bc89-4a62-8e52-b7b4bdd208b8", Integer.parseInt(__amount), "https://www.zarinpal.com/", __capacity + "," + App.getUniquePseudoID(this)));
                 http.setFixedLengthStreamingMode(json.length());
                 http.setRequestProperty("Accept", "application/json");
                 http.setRequestProperty("Content-Type", "application/json");
@@ -165,7 +196,7 @@ public class ZarinpalActivity extends AppCompatActivity {
                     }
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
                         new Thread(() -> {
-                            if (!status.equalsIgnoreCase("ok")) {
+                            if (status.equalsIgnoreCase("ok")) {
                                 try {
                                     for (int i = 0;i < 10; i++){
                                         String res = charge_id();
@@ -178,8 +209,6 @@ public class ZarinpalActivity extends AppCompatActivity {
                                         }
                                     }
                                 } catch (Throwable e) {
-
-                                }finally {
                                     VpnStatus.updateStatusChange(getApplicationContext(), VpnStatus.CH_NOT, null);
                                 }
                             } else {

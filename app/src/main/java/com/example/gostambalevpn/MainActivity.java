@@ -58,7 +58,9 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
     //private Thread uiThread;
     private Button btn_connect;
     private Button btn_disconnect;
+    private Button btn_apps;
     private Button btn_charge;
+    private TextView device_id;
     private TextView emoji_txt;
     private TextView usage_txt;
     private ProgressBar progressBar;
@@ -126,9 +128,12 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         btn_connect = findViewById(R.id.btn_connect);
         btn_disconnect = findViewById(R.id.btn_disconnect);
         btn_charge = findViewById(R.id.btn_charge);
+        btn_apps = findViewById(R.id.btn_apps);
         emoji_txt = findViewById(R.id.emoji_txt);
         usage_txt = findViewById(R.id.usage_txt);
+        device_id = findViewById(R.id.device_id);
         progressBar = findViewById(R.id.progressBar);
+
 
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
@@ -142,11 +147,14 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         } else {
             onActivityResult(App.START_VPN_PROFILE, Activity.RESULT_OK, null);
         }
+
         createNotificationChannels();
         VpnStatus.addVpnStatusChange(this);
         App.appInit(this);
+        this.device_id.setText(App.device_id.substring(0, 10));
         App.startAnimation(this, findViewById(R.id.GUID), R.anim.anim_slide_down, true);
         App.login(App.LOGIN_CODE, this);
+
 
         btn_connect.setOnClickListener(v ->  {
             if(ConnectionTimer != null)ConnectionTimer.cancel();
@@ -171,7 +179,14 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             stop_vpn(true);
         });
         btn_charge.setOnClickListener(v->{
+            if(ConnectionTimer != null )ConnectionTimer.cancel();
+            stop_vpn(true);
             startActivity(new Intent(this, ZarinpalActivity.class));
+        });
+        btn_apps.setOnClickListener(v -> {
+            if(ConnectionTimer != null )ConnectionTimer.cancel();
+            stop_vpn(true);
+            startActivity(new Intent(this, ApplicationListActivity.class));
         });
         if(uiThread != null)uiThread.interrupt();
         uiThread = new Thread(() -> {
@@ -330,6 +345,11 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
                     App.startAnimation(this, emoji_txt, R.anim.amin_up_down, true);
                     break;
                 case VpnStatus.CH_NOT:
+                    showMessage(" ببخشید شارژ نشد! به آیدی gostambale@ پیام بدین.همه جا هستم.", Color.parseColor("#FFB200"));
+                    btn_disconnect.setVisibility(View.GONE);
+                    btn_connect.setVisibility(View.VISIBLE);
+                    emoji_txt.setText("\uD83E\uDD15");
+                    App.startAnimation(this, emoji_txt, R.anim.amin_up_down, true);
                     break;
             }
 

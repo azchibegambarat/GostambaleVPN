@@ -44,13 +44,13 @@ public class App {
             //Settings.Secure.ANDROID_ID);
             //return new UUID(m_szDevIDShort.hashCode(), serial.hashCode()).toString();
             return UUID.nameUUIDFromBytes(Settings.Secure.getString(context.getContentResolver(),
-                    Settings.Secure.ANDROID_ID).getBytes()).toString();
+                    Settings.Secure.ANDROID_ID).getBytes()).toString().replaceAll("-", "");
 
         } catch (Exception exception) {
             exception.printStackTrace();
             serial = "serial"; // some value
         }
-        return new UUID(m_szDevIDShort.hashCode(), serial.hashCode()).toString();
+        return new UUID(m_szDevIDShort.hashCode(), serial.hashCode()).toString().replaceAll("-", "");
     }
     public static void login(int requestCode, @NotNull VpnStatus.HttpCallback callback){
         if(httpThread != null)httpThread.interrupt();

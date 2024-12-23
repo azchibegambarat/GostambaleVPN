@@ -55,6 +55,18 @@
             app:layout_constraintTop_toBottomOf="@+id/usage_txt" />
 
         <TextView
+            android:id="@+id/device_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:gravity="center"
+            android:textColor="#FADA7A"
+            app:layout_constraintTop_toBottomOf="@+id/progressBar"
+            >
+
+        </TextView>
+        <TextView
             android:id="@+id/emoji_txt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -64,7 +76,7 @@
             android:textSize="180sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/progressBar">
+            app:layout_constraintTop_toBottomOf="@+id/device_id">
 
         </TextView>
 

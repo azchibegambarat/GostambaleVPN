@@ -6,10 +6,12 @@ import android.content.pm.PackageManager;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 
+import com.example.gostambalevpn.ApplicationListActivity;
 import com.example.gostambalevpn.MainActivity;
 import com.example.gostambalevpn.core.GostambaleVpnService;
 import com.example.gostambalevpn.core.VPNManagement;
 import com.example.gostambalevpn.utils.App;
+import com.example.gostambalevpn.utils.ListModel;
 import com.example.gostambalevpn.utils.VpnStatus;
 
 import org.java_websocket.client.WebSocketClient;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCallback {
@@ -107,17 +110,18 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
         builder.addDnsServer("1.1.1.1");
         builder.addRoute("0.0.0.0", 0);
         builder.addDisallowedApplication(this.vpnService.getPackageName());
-//        List<ListModel> apps = ApplicationListActivity.getApplicationList(this.openVPNService);
-//        if (apps != null) {
-//            apps.forEach(app -> {
-//                try {
-//                    builder.addDisallowedApplication(app.getPackageName());
-//                } catch (PackageManager.NameNotFoundException e) {
-//
-//                }
-//            });
-//        }
-        builder.setMtu(1480);
+        List<ListModel> apps = ApplicationListActivity.getApplicationList(this.vpnService);
+        if (apps != null) {
+            apps.forEach(app -> {
+                try {
+                    builder.addDisallowedApplication(app.getPackageName());
+                } catch (PackageManager.NameNotFoundException e) {
+
+                }
+            });
+        }
+        //builder.setMtu(1480);
+        builder.setMtu(16384);
         synchronized (this.vpnService) {
             iface = builder
                     .setSession("mServer")
