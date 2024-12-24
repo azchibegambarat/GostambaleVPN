@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
 
         btn_connect.setOnClickListener(v ->  {
             if(ConnectionTimer != null)ConnectionTimer.cancel();
-            ConnectionTimer = new CountDownTimer(7_000, 1000) {
+            ConnectionTimer = new CountDownTimer(17_000, 1000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
                     if(GostambaleVpnService.isRunning())ConnectionTimer.cancel();

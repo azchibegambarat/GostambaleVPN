@@ -64,7 +64,7 @@ public class ReconnectVPN extends Activity{
             }
         }
         if(ConnectionTimer != null)ConnectionTimer.cancel();
-        ConnectionTimer = new CountDownTimer(70_000, 7000) {
+        ConnectionTimer = new CountDownTimer(70_000, 17000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 if(GostambaleVpnService.isRunning()){
