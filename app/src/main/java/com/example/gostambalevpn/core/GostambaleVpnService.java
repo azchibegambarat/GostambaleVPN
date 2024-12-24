@@ -129,15 +129,10 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                            continue;
                        }
                        if(state == VPNManagement.VPNConnectionState.Exit){
-                           showNotification("منقطع شدید!", "منقطع شدید!", NOTIFICATION_CHANNEL_GG_ID, mConnecttime);
                            running = false;
                            break;
                        }
                        if(state == VPNManagement.VPNConnectionState.RemoteClosed){
-                           NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
-                           nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
-
-                           showNotification(" ایران قطع کرد!", "ایران قطع کرد!", NOTIFICATION_CHANNEL_GG_ID, mConnecttime);
                            running = false;
                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                                startForeground((int) new Date().getTime(), HeadsUpNotificationService.onStartCommand(this));
