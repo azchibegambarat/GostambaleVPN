@@ -141,8 +141,8 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                            new Thread(()->{
                                try {
                                    Thread.sleep(2000);
-                                   removeNotification();
-                               } catch (InterruptedException | RemoteException e) {
+                                   //removeNotification();
+                               } catch (InterruptedException e) {
 
                                }
                                management.vpnStop();
