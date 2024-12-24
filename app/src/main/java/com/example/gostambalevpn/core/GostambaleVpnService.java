@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 
 import com.example.gostambalevpn.DisconnectVPN;
 import com.example.gostambalevpn.IGostambaleVPNService;
+import com.example.gostambalevpn.MainActivity;
 import com.example.gostambalevpn.R;
 import com.example.gostambalevpn.core.cloudflare.CloudflareVPNManagement;
 import com.example.gostambalevpn.utils.App;
@@ -35,6 +36,7 @@ import java.util.Random;
 public class GostambaleVpnService extends VpnService implements IGostambaleVPNService, VpnStatus.VpnStatusChange {
     public static final String START_SERVICE = "com.example.gostambalevpn.core.START_SERVICE";
     public static final String NOTIFICATION_CHANNEL_BG_ID = "gostambalevpn";
+    public static final String NOTIFICATION_CHANNEL_GG_ID = "gg_gostambalevpn";
     private VPNManagement management = null;
     private Thread mainThread = null;
     private Thread vpnRunning = null;
@@ -127,10 +129,15 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                            continue;
                        }
                        if(state == VPNManagement.VPNConnectionState.Exit){
+                           showNotification("منقطع شدید!", "منقطع شدید!", NOTIFICATION_CHANNEL_GG_ID, mConnecttime);
                            running = false;
                            break;
                        }
                        if(state == VPNManagement.VPNConnectionState.RemoteClosed){
+                           NotificationManager nMgr = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE);
+                           nMgr.cancel(NOTIFICATION_CHANNEL_BG_ID.hashCode());
+
+                           showNotification(" ایران قطع کرد!", "ایران قطع کرد!", NOTIFICATION_CHANNEL_GG_ID, mConnecttime);
                            running = false;
                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                                startForeground((int) new Date().getTime(), HeadsUpNotificationService.onStartCommand(this));
@@ -244,23 +251,27 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
 
     }
     @SuppressLint("ForegroundServiceType")
-    private void showNotification(final String msg, String tickerText, @NonNull String channel, long when, Intent intent) {
+    private void showNotification(final String msg, String tickerText, @NonNull String channel, long when) {
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         android.app.Notification.Builder nbuilder = new Notification.Builder(this);
 
         int priority;
         priority = PRIORITY_MIN;
-
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            nbuilder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
+        }
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,  notificationIntent,  PendingIntent.FLAG_IMMUTABLE);
+        nbuilder.setContentIntent(pendingIntent);
 
         nbuilder.setContentTitle(tickerText);
-
         nbuilder.setContentText(msg);
         nbuilder.setOnlyAlertOnce(true);
         nbuilder.setOngoing(true);
 
         nbuilder.setSmallIcon(R.drawable.ic_stat_vpn_outline);
-        nbuilder.setContentIntent(getGraphPendingIntent());
+        //nbuilder.setContentIntent(getGraphPendingIntent());
 
         if (when != 0)
             nbuilder.setWhen(when);
@@ -274,8 +285,8 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             //noinspection NewApi
             nbuilder.setChannelId(channel);
-                //noinspection NewApi
-                nbuilder.setShortcutId(App.device_id);
+            //noinspection NewApi
+            nbuilder.setShortcutId(App.device_id);
 
         }
 
@@ -291,8 +302,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             startForeground(notificationId, notification);
         } else {
-            startForeground(notificationId, notification,
-                    FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            startForeground(notificationId, notification, FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
         }
 
 
@@ -306,6 +316,8 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
 
     @Override
     public boolean stopVPN(boolean replaceConnection) throws RemoteException {
+        VpnStatus.remove(this);
+        stopForeground(true);
         if(msg)VpnStatus.updateStatusChange(this, VpnStatus.VPN_DISCONNECTED, null);
         running = false;
         if(vpnRunning != null){
@@ -352,6 +364,6 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         long percent = ((rx + tx) * 100L) / capacity;
         String tickerText = (String.format("%s/%s(%s) " , VpnStatus.humanReadableByteCountBin(rx + tx), VpnStatus.humanReadableByteCountBin(capacity), percent + "%"));
         String in_out = String.format("%s %s", VpnStatus.humanReadableByteCountBin(dif_rx), VpnStatus.humanReadableByteCountBin(dif_tx));
-        showNotification(in_out, tickerText, NOTIFICATION_CHANNEL_BG_ID, mConnecttime, null);
+        showNotification(in_out, tickerText, NOTIFICATION_CHANNEL_BG_ID, mConnecttime);
     }
 }
