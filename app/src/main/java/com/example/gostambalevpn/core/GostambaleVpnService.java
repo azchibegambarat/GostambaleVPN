@@ -12,10 +12,17 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.VpnService;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -45,6 +52,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
     private long mConnecttime;
     private String lastChannel;
     private long old_rx, old_tx;
+    private int total_reconnected;
 
     private final IBinder mBinder = new IGostambaleVPNService.Stub(){
 
@@ -93,12 +101,36 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
         else
             return super.onBind(intent);
     }
+    private boolean hasInternetConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+            for (NetworkInfo ni : netInfo) {
+                if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                    if (ni.isConnected())
+                        haveConnectedWifi = true;
+                if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                    if (ni.isConnected())
+                        haveConnectedMobile = true;
+            }
+        } catch (Exception e) {
+            Bundle params = new Bundle();
+            params.putString("device_id", App.device_id);
+            params.putString("exception", "CA1" + e.toString());
+            //mFirebaseAnalytics.logEvent("app_param_error", params);
+        }
+
+        return haveConnectedWifi || haveConnectedMobile;
+    }
     @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         mConnecttime = 0;
         old_rx = 0;
         old_tx  = 0;
+        total_reconnected = 0;
         try {
             removeNotification();
         } catch (RemoteException e) {
@@ -132,24 +164,38 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                            running = false;
                            break;
                        }
-                       if(state == VPNManagement.VPNConnectionState.RemoteClosed){
-                           running = false;
-                           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                               startForeground((int) new Date().getTime(), HeadsUpNotificationService.onStartCommand(this));
-                           } else {
-                               startForeground((int) new Date().getTime(), Objects.requireNonNull(HeadsUpNotificationService.onStartCommand(this)), FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-                           }
-                           VpnStatus.updateStatusChange(this, VpnStatus.VPN_INTERRUPT, null);
-                           new Thread(()->{
-                               try {
-                                   Thread.sleep(2000);
-                                   //removeNotification();
-                               } catch (InterruptedException e) {
-
+                       if(state == VPNManagement.VPNConnectionState.RemoteClosed) {
+                           SharedPreferences s = getSharedPreferences("khar", 0);
+                           boolean reconnect_auto = s.getBoolean("reconnect_auto", false);
+                           if (reconnect_auto) {
+                               if(hasInternetConnection()) {
+                                   total_reconnected++;
+                                   new Handler(Looper.getMainLooper()).post(() -> {
+                                       Toast.makeText(this, "اتصال دوباره...", Toast.LENGTH_SHORT).show();
+                                   });
+                                   management.vpnReconnect();
+                               }else{
+                                   Thread.sleep(1000);
                                }
-                               management.vpnStop();
-                               mainThread.interrupt();
-                           }).start();
+                           } else {
+                               running = false;
+                               if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                   startForeground((int) new Date().getTime(), HeadsUpNotificationService.onStartCommand(this));
+                               } else {
+                                   startForeground((int) new Date().getTime(), Objects.requireNonNull(HeadsUpNotificationService.onStartCommand(this)), FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                               }
+                               VpnStatus.updateStatusChange(this, VpnStatus.VPN_INTERRUPT, null);
+                               new Thread(() -> {
+                                   try {
+                                       Thread.sleep(2000);
+                                       //removeNotification();
+                                   } catch (InterruptedException e) {
+
+                                   }
+                                   management.vpnStop();
+                                   mainThread.interrupt();
+                               }).start();
+                           }
                        }
                    } catch (InterruptedException e) {
                        running = false;
@@ -358,7 +404,7 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
 
         long percent = ((rx + tx) * 100L) / capacity;
         String tickerText = (String.format("%s/%s(%s) " , VpnStatus.humanReadableByteCountBin(rx + tx), VpnStatus.humanReadableByteCountBin(capacity), percent + "%"));
-        String in_out = String.format("%s %s", VpnStatus.humanReadableByteCountBin(dif_rx), VpnStatus.humanReadableByteCountBin(dif_tx));
+        String in_out = String.format("%s %s reconnected:%s", VpnStatus.humanReadableByteCountBin(dif_rx), VpnStatus.humanReadableByteCountBin(dif_tx), total_reconnected);
         showNotification(in_out, tickerText, NOTIFICATION_CHANNEL_BG_ID, mConnecttime);
     }
 }

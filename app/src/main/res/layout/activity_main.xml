@@ -100,6 +100,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btn_connect" />
 
+        <CheckBox
+            android:id="@+id/reconnect_auto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layoutDirection="rtl"
+            android:text="اتصال خودکار در زمان قطع شدن!"
+
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btn_connect" />
         <Button
             android:id="@+id/btn_apps"
             android:layout_width="wrap_content"

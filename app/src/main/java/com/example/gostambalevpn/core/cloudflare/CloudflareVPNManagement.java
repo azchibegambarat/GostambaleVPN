@@ -33,7 +33,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
     private long CAPACITY;
     private final GostambaleVpnService vpnService;
     private WebSocketClient websocket;
-    private ParcelFileDescriptor iface;
+    private ParcelFileDescriptor iface, oldIface;
     private PendingIntent mConfigureIntent;
     private FileChannel in_vpn;
     private FileChannel out_vpn;
@@ -47,6 +47,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
         this.vpnService = gostambaleVpnService;
         mConfigureIntent = PendingIntent.getActivity(vpnService, 0, new Intent(vpnService, MainActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
     }
 
     @Override
@@ -63,6 +64,8 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
             if(updateUIThread != null)updateUIThread.interrupt();
             if(sndThread != null)sndThread.interrupt();
 
+            iface = null;
+
         } catch (IOException e) {
 
         }
@@ -71,7 +74,20 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
 
     @Override
     public void vpnReconnect() {
+        running = false;
+        state = VPNConnectionState.Connecting;
+        if (this.websocket != null) {
+            this.websocket.close();
+        }
+        if(updateUIThread != null)updateUIThread.interrupt();
+        if(sndThread != null)sndThread.interrupt();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
 
+        }
+        this.oldIface = iface;
+        new Thread(this).start();
     }
 
     @Override
@@ -127,6 +143,14 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
                     .setSession("mServer")
                     .setConfigureIntent(mConfigureIntent)
                     .establish();
+            if(this.oldIface != null){
+                try {
+                    this.oldIface.close();
+                } catch (IOException e) {
+
+                }
+                this.oldIface = null;
+            }
         }
         in_vpn = new FileInputStream(iface.getFileDescriptor()).getChannel();
         out_vpn = new FileOutputStream(iface.getFileDescriptor()).getChannel();
@@ -146,7 +170,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
                         running = true;
                         VpnStatus.updateStatusChange(vpnService, VpnStatus.VPN_CONNECTED, null);
                         updateUIThread = new Thread(() -> {
-                            while (running) {
+                            while (!Thread.interrupted() && running) {
                                 try {
                                     Thread.sleep(1000);
                                     VpnStatus.updateBytes(CAPACITY, total_rx, total_tx);
@@ -156,27 +180,25 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
                             }
                         });
                         sndThread = new Thread(()->{
-                            while (running){
-                                ByteBuffer from_tun = ByteBuffer.allocate(Short.MAX_VALUE);
-                                while (running) {
-                                    from_tun.position(0);
-                                    from_tun.clear();
-                                    if (Thread.interrupted()) {
-                                        return;
-                                    }
-                                    try {
-                                        int length_in = in_vpn.read(from_tun);
-                                        if (length_in > 0) {
-                                            from_tun.flip();
-                                            if(websocket.isOpen()) {
-                                                total_tx += length_in;
-                                                websocket.send(from_tun);
-                                            }
+                            ByteBuffer from_tun = ByteBuffer.allocate(Short.MAX_VALUE);
+                            while (!Thread.interrupted() && running) {
+                                from_tun.position(0);
+                                from_tun.clear();
+                                if (Thread.interrupted()) {
+                                    return;
+                                }
+                                try {
+                                    int length_in = in_vpn.read(from_tun);
+                                    if (length_in > 0) {
+                                        from_tun.flip();
+                                        if(websocket.isOpen()) {
+                                            total_tx += length_in;
+                                            websocket.send(from_tun);
                                         }
-                                    } catch (IOException e) {
-                                        // e.printStackTrace();
-                                        break;
                                     }
+                                } catch (IOException e) {
+                                    // e.printStackTrace();
+                                    break;
                                 }
                             }
                         });
@@ -205,7 +227,7 @@ public class CloudflareVPNManagement implements VPNManagement, VpnStatus.HttpCal
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    if(running)
+                    if(running && remote)
                         state = VPNConnectionState.RemoteClosed;
                 }
 

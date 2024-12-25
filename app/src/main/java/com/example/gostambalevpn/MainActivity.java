@@ -12,6 +12,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.VpnService;
@@ -24,6 +25,7 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
     private Button btn_charge;
     private TextView device_id;
     private TextView emoji_txt;
+    private CheckBox reconnect_auto;
     private TextView usage_txt;
     private ProgressBar progressBar;
     private CountDownTimer ConnectionTimer;
@@ -113,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
+        SharedPreferences s = getSharedPreferences("khar", 0);
         if (Build.VERSION.SDK_INT >= 33) {
             if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{POST_NOTIFICATIONS}, 666);
@@ -133,6 +136,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         usage_txt = findViewById(R.id.usage_txt);
         device_id = findViewById(R.id.device_id);
         progressBar = findViewById(R.id.progressBar);
+        reconnect_auto = findViewById(R.id.reconnect_auto);
 
 
         Intent intent = VpnService.prepare(this);
@@ -154,8 +158,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
         this.device_id.setText(App.device_id.substring(0, 10));
         App.startAnimation(this, findViewById(R.id.GUID), R.anim.anim_slide_down, true);
         App.login(App.LOGIN_CODE, this);
-
-
+        reconnect_auto.setChecked(s.getBoolean("reconnect_auto", false));
         btn_connect.setOnClickListener(v ->  {
             if(ConnectionTimer != null)ConnectionTimer.cancel();
             ConnectionTimer = new CountDownTimer(17_000, 1000) {
@@ -187,6 +190,9 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
             if(ConnectionTimer != null )ConnectionTimer.cancel();
             stop_vpn(true);
             startActivity(new Intent(this, ApplicationListActivity.class));
+        });
+        reconnect_auto.setOnClickListener(v -> {
+            s.edit().putBoolean("reconnect_auto", reconnect_auto.isChecked()).apply();
         });
         if(uiThread != null)uiThread.interrupt();
         uiThread = new Thread(() -> {
