@@ -201,7 +201,6 @@ public class GostambaleVpnService extends VpnService implements IGostambaleVPNSe
                        running = false;
                        break;
                    }
-
                }
             });
             vpnRunning.start();
