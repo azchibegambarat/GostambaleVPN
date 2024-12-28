@@ -291,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements VpnStatus.HttpCal
                 case VpnStatus.VPN_CONNECTING:
                     if (msg == null)
                         msg = "درحال اتصال...";
-                    btn_disconnect.setVisibility(View.GONE);
+                    btn_disconnect.setVisibility(View.VISIBLE);
                     btn_connect.setVisibility(View.GONE);
                     showMessage(msg, Color.WHITE);
                     emoji_txt.setText("\uD83E\uDDD0");
